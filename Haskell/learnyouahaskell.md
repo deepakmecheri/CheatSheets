@@ -239,5 +239,71 @@
   ghci> zip [1 .. 5] ["one", "two", "three", "four", "five"]  
   [(1,"one"),(2,"two"),(3,"three"),(4,"four"),(5,"five")]  
   ```
-
+## Types and Typeclasses
+- The type of any expression can be inspected using `:t` command on `ghci`
+  ```haskell
+  ghci> :t 'a'  
+  'a' :: Char  
+  ghci> :t True  
+  True :: Bool  
+  ghci> :t "HELLO!"  
+  "HELLO!" :: [Char]  
+  ghci> :t (True, 'a')  
+  (True, 'a') :: (Bool, Char)  
+  ghci> :t 4 == 5  
+  4 == 5 :: Bool 
+  ```
+  > Note : `::` is read as "has type of"
+- When writing our own functions, we can choose to give them an explicit type declaration
+  ```haskell
+  removeNonUppercase :: [Char] -> [Char]  
+  removeNonUppercase st = [ c | c <- st, c `elem` ['A'..'Z']]   
+  addThree :: Int -> Int -> Int -> Int  
+  addThree x y z = x + y + z  
+  ```
+- In case of ambiguous situations `::` can be used to specify the type
+  ```haskell
+  Prelude> 4
+  4
+  Prelude> 4 :: Float
+  4.0
+  Prelude> 
+  ```
+- Some common types are 
+  - `Int`
+  - `Integer`
+  - `Float`
+  - `Double`
+  - `Bool`
+  - `Char`
+- A typeclass is one level abstraction above types
+- Examples of typeclasses being 
+  - `Eq`
+  - `Ord`
+  - `Show`
+  - `Read`
+  - `Enum`
+  - `Bounded`
+  - `Num`
+  - `Integral`
+  - `Floating`
+- `Bounded` types have upper and lower bound
+  ```haskell
+  ghci> minBound :: Int  
+  -2147483648  
+  ghci> maxBound :: Char  
+  '\1114111'  
+  ghci> maxBound :: Bool  
+  True  
+  ghci> minBound :: Bool  
+  False 
+  ```
+- A very useful function for dealing with numbers is `fromIntegral`
+  ```haskell
+  ghci> :t fromIntegral  
+  fromIntegral :: (Integral a, Num b) => a -> b
+  ghci> fromIntegral (length [1,2,3,4]) + 3.2
+  7.2
+  ```
+  > Note : We had to use `fromIntegral` because `length` returns `Int` which is not addable with a float. So we converted it into a more genaral `Num`
 
