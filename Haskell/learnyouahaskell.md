@@ -306,4 +306,144 @@
   7.2
   ```
   > Note : We had to use `fromIntegral` because `length` returns `Int` which is not addable with a float. So we converted it into a more genaral `Num`
+## Syntax in Functions  
+### Pattern Matching
+```haskell
+sayMe :: (Integral a) => a -> String  
+sayMe 1 = "One!"  
+sayMe 2 = "Two!"  
+sayMe 3 = "Three!"  
+sayMe 4 = "Four!"  
+sayMe 5 = "Five!"  
+sayMe x = "Not between 1 and 5"  
+```
+```haskell
+addVectors :: (Num a) => (a, a) -> (a, a) -> (a, a)  
+addVectors (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+```
+- Use `_` to match don't cares
+  ```haskell
+  first :: (a, b, c) -> a  
+  first (x, _, _) = x  
+    
+  second :: (a, b, c) -> b  
+  second (_, y, _) = y  
+    
+  third :: (a, b, c) -> c  
+  third (_, _, z) = z  
+  ```
+- It is also possible to pattern match in list comprehensions
+  ```haskell
+  ghci> let xs = [(1,3), (4,3), (2,4), (5,3), (5,6), (3,1)]  
+  ghci> [a+b | (a,b) <- xs]  
+  [4,7,6,8,11,4]  
+  ```
+  Should a pattern match fail, it will just move on to the next element
+```haskell
+head' :: [a] -> a  
+head' [] = error "Can't call head on an empty list, dummy!"  
+head' (x:_) = x  
+```
+- There's also a thing called as patterns. Those are a handy way of breaking something up according to a pattern and binding it to names whilst still keeping a reference to the whole thing. You do that by putting a name and an `@` in front of a pattern. For instance, the pattern `xs@(x:y:ys)`. This pattern will match exactly the same thing as `x:y:ys` but you can easily get the whole list via xs instead of repeating yourself by typing out `x:y:ys` in the function body again
+  ```haskell
+  capital :: String -> String  
+  capital "" = "Empty string, whoops!"  
+  capital all@(x:xs) = "The first letter of " ++ all ++ " is " ++ [x]  
+  ```
+### Guards
+- A guard is basically a boolean expression. If it evaluates to True, then the corresponding function body is used
+  ```haskell
+  bmiTell :: (RealFloat a) => a -> String  
+  bmiTell bmi  
+      | bmi <= 18.5 = "You're underweight, you emo, you!"  
+      | bmi <= 25.0 = "You're supposedly normal. Pffft, I bet you're ugly!"  
+      | bmi <= 30.0 = "You're fat! Lose some weight, fatty!"  
+      | otherwise   = "You're a whale, congratulations!"  
+  ```
+- Many times, the last guard is `otherwise` . It is defined simply as `otherwise = True` and catches everything
+```haskell
+myCompare :: (Ord a) => a -> a -> Ordering  
+a `myCompare` b  
+    | a > b     = GT  
+    | a == b    = EQ  
+    | otherwise = LT  
+```
+### Where
+- `Where` bindings are a syntactic construct that let you bind to variables at the end of a function and the whole function can see them, including all the guards
 
+```haskell
+bmiTell :: (RealFloat a) => a -> a -> String  
+bmiTell weight height  
+  | bmi <= skinny = "You're underweight, you emo, you!"  
+  | bmi <= normal = "You're supposedly normal. Pffft, I bet you're ugly!"  
+  | bmi <= fat    = "You're fat! Lose some weight, fatty!"  
+  | otherwise     = "You're a whale, congratulations!"  
+  where bmi = weight / height ^ 2  
+        skinny = 18.5  
+        normal = 25.0  
+        fat = 30.0  
+```
+```haskell
+initials :: String -> String -> String  
+initials firstname lastname = [f] ++ ". " ++ [l] ++ "."  
+    where (f:_) = firstname  
+          (l:_) = lastname    
+```
+```haskell
+calcBmis :: (RealFloat a) => [(a, a)] -> [a]  
+calcBmis xs = [bmi w h | (w, h) <- xs]  
+    where bmi weight height = weight / height ^ 2  
+```
+### Let
+-  `let` bindings let you bind to variables anywhere and are expressions themselves, but are very local, so they don't span across guards
+```haskell
+cylinder :: (RealFloat a) => a -> a -> a  
+cylinder r h = 
+    let sideArea = 2 * pi * r * h  
+        topArea = pi * r ^2  
+    in  sideArea + 2 * topArea
+```
+- Note that `let` bindings are expressions themselves whereas `where` bindings are just syntactic constructs
+- If we want to bind to several variables inline, we obviously can't align them at columns. That's why we can separate them with semicolons
+  ```haskell
+  ghci> (let a = 100; b = 200; c = 300 in a*b*c, let foo="Hey "; bar = "there!" in foo ++ bar)  
+  (6000000,"Hey there!") 
+  ```
+- You can do the same thing a bit cleaner using pattern matching
+  ```haskell
+  ghci> (let (a,b,c) = (1,2,3) in a+b+c) * 100  
+  600  
+  ```
+- You can also put `let` bindings inside list comprehensions
+```haskell
+calcBmis :: (RealFloat a) => [(a, a)] -> [a]  
+calcBmis xs = [bmi | (w, h) <- xs, let bmi = w / h ^ 2, bmi >= 25.0]  
+```
+> Note: `let` bindings used inside list comprehensions do not have `in` part and are implictly bound to the expressions inside `[]`
+### Case Expressions
+- In short pattern matching on parameters in function definitions is syntactic sugar for case expressions
+- These two pieces of code do the same thing and are interchangeable:
+```haskell
+head' :: [a] -> a  
+head' [] = error "No head for empty lists!"  
+head' (x:_) = x  
+```
+```haskell
+head' :: [a] -> a  
+head' xs = case xs of [] -> error "No head for empty lists!"  
+                      (x:_) -> x  
+```
+- As you can see, the syntax for case expressions is pretty simple:
+```haskell
+case expression of pattern -> result  
+                   pattern -> result  
+                   pattern -> result  
+                   ...  
+```
+- Whereas pattern matching on function parameters can only be done when defining functions, case expressions can be used pretty much anywhere
+```haskell
+describeList :: [a] -> String  
+describeList xs = "The list is " ++ case xs of [] -> "empty."  
+                                               [x] -> "a singleton list."   
+                                               xs -> "a longer list."  
+```
