@@ -239,7 +239,7 @@
   ghci> zip [1 .. 5] ["one", "two", "three", "four", "five"]  
   [(1,"one"),(2,"two"),(3,"three"),(4,"four"),(5,"five")]  
   ```
-## Types and Typeclasses
+## 3. Types and Typeclasses
 - The type of any expression can be inspected using `:t` command on `ghci`
   ```haskell
   ghci> :t 'a'  
@@ -306,7 +306,7 @@
   7.2
   ```
   > Note : We had to use `fromIntegral` because `length` returns `Int` which is not addable with a float. So we converted it into a more genaral `Num`
-## Syntax in Functions  
+## 4. Syntax in Functions  
 ### Pattern Matching
 ```haskell
 sayMe :: (Integral a) => a -> String  
@@ -446,4 +446,269 @@ describeList :: [a] -> String
 describeList xs = "The list is " ++ case xs of [] -> "empty."  
                                                [x] -> "a singleton list."   
                                                xs -> "a longer list."  
+```
+## 5. Recursion
+Some sample recursive functions
+```haskell
+maximum' :: (Ord a) => [a] -> a  
+maximum' [] = error "maximum of empty list"  
+maximum' [x] = x  
+maximum' (x:xs) = max x (maximum' xs)  
+```
+```haskell
+replicate' :: (Num i, Ord i) => i -> a -> [a]  
+replicate' n x  
+    | n <= 0    = []  
+    | otherwise = x:replicate' (n-1) x  
+```
+```haskell
+take' :: (Num i, Ord i) => i -> [a] -> [a]  
+take' n _  
+    | n <= 0   = []  
+take' _ []     = []  
+take' n (x:xs) = x : take' (n-1) xs  
+```
+> Notice that we use a guard, but without an `otherwise` part. That means that if n turns out to be more than 0, the matching will fall through to the next pattern
+```haskell
+repeat' :: a -> [a]  
+repeat' x = x:repeat' x 
+```
+> This type of recursive definitions are possible due to the lazy nature of haskell 
+```haskell
+zip' :: [a] -> [b] -> [(a,b)]  
+zip' _ [] = []  
+zip' [] _ = []  
+zip' (x:xs) (y:ys) = (x,y):zip' xs ys  
+```
+```haskell
+elem' :: (Eq a) => a -> [a] -> Bool  
+elem' a [] = False  
+elem' a (x:xs)  
+    | a == x    = True  
+    | otherwise = a `elem'` xs   
+```
+```haskell
+sort' :: (Ord a) => [a] -> [a]
+sort' [] = []
+sort' (x:xs) = leftHalf ++ [x] ++ rightHalf
+  where leftHalf = sort' [y | y <- xs, y <= x]
+        rightHalf = sort' [y | y <- xs, y > x]
+```
+## 6. Higher order functions
+In Haskell the line of code `max :: (Ord a) => a -> a -> a` is equivalent to `max :: (Ord a) => a -> (a -> a)`
+
+All functions that accept several parameters are **curried functions**. There are no functions that take in multiple parameters (as in all functions are reducible to curried forms of this ideal function structure that takes only one parameter). All functions have single input and a single output. This input and output can be anything, including functions.
+
+This allows for doing stuff that might look really strange from an imperative view 
+
+```haskell
+Prelude> addN n = (n +)
+Prelude> addTwo = addN 2
+Prelude> addTwo 3
+5
+```
+```haskell
+divideByTen :: (Floating a) => a -> a  
+divideByTen = (/10)  
+```
+```haskell
+isUpperAlphanum :: Char -> Bool  
+isUpperAlphanum = (`elem` ['A'..'Z'])  
+```
+Now get ready for some *really* weird functions
+```haskell
+applyTwice :: (a -> a) -> a -> a  
+applyTwice f x = f (f x)  
+```
+```haskell
+ghci> applyTwice (+3) 10  
+16  
+ghci> applyTwice (++ " HAHA") "HEY"  
+"HEY HAHA HAHA"  
+ghci> applyTwice ("HAHA " ++) "HEY"  
+"HAHA HAHA HEY"  
+ghci> applyTwice (multThree 2 2) 9  
+144  
+ghci> applyTwice (3:) [1]  
+[3,3,1]  
+```
+```haskell
+flip' :: (a -> b -> c) -> b -> a -> c  
+flip' f y x = f x y  
+```
+```haskell
+ghci> flip' zip [1,2,3,4,5] "hello"  
+[('h',1),('e',2),('l',3),('l',4),('o',5)]  
+ghci> zipWith (flip' div) [2,2..] [10,8,6,4,2]  
+[5,4,3,2,1]  
+```
+### Maps and filters
+`map` takes a function and a list and applies that function to every element in the list, producing a new list
+```haskell
+map :: (a -> b) -> [a] -> [b]  
+map _ [] = []  
+map f (x:xs) = f x : map f xs  
+```
+```haskell
+ghci> map (+3) [1,5,3,1,6]  
+[4,8,6,4,9]  
+ghci> map (++ "!") ["BIFF", "BANG", "POW"]  
+["BIFF!","BANG!","POW!"]  
+ghci> map (replicate 3) [3..6]  
+[[3,3,3],[4,4,4],[5,5,5],[6,6,6]]  
+ghci> map (map (^2)) [[1,2],[3,4,5,6],[7,8]]  
+[[1,4],[9,16,25,36],[49,64]]  
+ghci> map fst [(1,2),(3,5),(6,3),(2,6),(2,5)]  
+[1,3,6,2,2]  
+```
+
+`filter` is a function that takes a predicate and a list and then returns the list of elements that satisfy the predicate
+```haskell
+filter :: (a -> Bool) -> [a] -> [a]  
+filter _ [] = []  
+filter p (x:xs)   
+    | p x       = x : filter p xs  
+    | otherwise = filter p xs  
+```
+```haskell
+ghci> filter (>3) [1,5,3,2,1,6,4,3,2,1]  
+[5,6,4]  
+ghci> filter (==3) [1,2,3,4,5]  
+[3]  
+ghci> filter even [1..10]  
+[2,4,6,8,10]  
+ghci> let notNull x = not (null x) in filter notNull [[1,2,3],[],[3,4,5],[2,2],[],[],[]]  
+[[1,2,3],[3,4,5],[2,2]]  
+ghci> filter (`elem` ['a'..'z']) "u LaUgH aT mE BeCaUsE I aM diFfeRent"  
+"uagameasadifeent"  
+ghci> filter (`elem` ['A'..'Z']) "i lauGh At You BecAuse u r aLL the Same"  
+"GAYBALLS"  
+```
+`filter` can be used in place of list comprehensions for generating much more readable code. The quicksort example we saw earlier can be modified like so
+```haskell
+quicksort :: (Ord a) => [a] -> [a]    
+quicksort [] = []    
+quicksort (x:xs) =     
+    let smallerSorted = quicksort (filter (<=x) xs)  
+        biggerSorted = quicksort (filter (>x) xs)   
+    in  smallerSorted ++ [x] ++ biggerSorted  
+```
+Let's find the largest number under 100,000 that's divisible by 3829
+```haskell
+largestDivisible :: (Integral a) => a  
+largestDivisible = head (filter p [100000,99999..])  
+    where p x = x `mod` 3829 == 0  
+```
+ `takeWhile` takes a predicate and a list and then goes from the beginning of the list and returns its elements while the predicate holds true
+
+Lets  try finding the sum of all odd squares that are smaller than 10,000
+```haskell
+ghci> sum (takeWhile (<10000) (filter odd (map (^2) [1..])))  
+166650 
+```
+### Lambdas
+Lambdas are basically anonymous functions that are used because we need some functions only once. To make a lambda, we write a `\` (because it kind of looks like the greek letter lambda if you squint hard enough) and then we write the parameters, separated by spaces. After that comes a `->` and then the function body.
+
+```haskell
+numLongChains :: Int  
+numLongChains = length (filter (\xs -> length xs > 15) (map chain [1..100])) 
+```
+### Folds
+A fold takes a binary function, a starting value and a list to fold up. The binary function itself takes two parameters
+
+`foldl` folds from left while `foldr` folds from right
+
+```haskell
+sum' :: (Num a) => [a] -> a  
+sum' xs = foldl (\acc x -> acc + x) 0 xs 
+```
+```haskell
+map' :: (a -> b) -> [a] -> [b]  
+map' f xs = foldr (\x acc -> f x : acc) [] xs  
+```
+Of course, we could have implemented this function with a left fold too. It would be  
+`map' f xs = foldl (\acc x -> acc ++ [f x]) [] xs`, but the thing is that the `++` function is much more expensive than `:`, so we usually use right folds when we're building up new lists from a list.
+
+The `foldl1` and `foldr1` functions work much like `foldl` and `foldr`, only you don't need to provide them with an explicit starting value. They assume the first (or last) element of the list to be the starting value and then start the fold with the element next to it.
+
+```haskell
+maximum' :: (Ord a) => [a] -> a  
+maximum' = foldr1 (\x acc -> if x > acc then x else acc)  
+  
+reverse' :: [a] -> [a]  
+reverse' = foldl (\acc x -> x : acc) []  
+  
+product' :: (Num a) => [a] -> a  
+product' = foldr1 (*)  
+  
+filter' :: (a -> Bool) -> [a] -> [a]  
+filter' p = foldr (\x acc -> if p x then x : acc else acc) []  
+  
+head' :: [a] -> a  
+head' = foldr1 (\x _ -> x)  
+  
+last' :: [a] -> a  
+last' = foldl1 (\_ x -> x)  
+```
+`scanl` and `scanr` are like `foldl` and `foldr`, only they report all the intermediate accumulator states in the form of a list. There are also `scanl1` and `scanr1`, which are analogous to `foldl1` and `foldr1`.
+```haskell
+ghci> scanl (+) 0 [3,5,2,1]  
+[0,3,8,10,11]  
+ghci> scanr (+) 0 [3,5,2,1]  
+[11,8,3,1,0]  
+ghci> scanl1 (\acc x -> if x > acc then x else acc) [3,4,5,3,7,9,2,1]  
+[3,4,5,5,7,9,9,9]  
+ghci> scanl (flip (:)) [] [3,2,1]  
+[[],[3],[2,3],[1,2,3]]  
+```
+
+I just thought of a nice way to write an unbounded version of the fibonacci series using `scanl`
+```haskell
+fib = 1 : scanl (+) 1 fib
+```
+
+### Function applications with `$`
+`$` operator is defined as so
+```haskell
+($) :: (a -> b) -> a -> b  
+f $ x = f x  
+```
+This might look useless at first glance but using `$` operator can help you write your code without it being cluttered by parenthesis. 
+In Haskell normal function application (putting a space between two things) has a really high precedence, the `$` function on the other hand, has the lowest precedence. 
+The below two lines are equivalent
+```haskell
+sqrt (3 + 4 + 9)
+sqrt $ 3 + 4 + 9
+```
+But apart from getting rid of parentheses, $ means that function application can be treated just like another function. That way, we can, for instance, map function application over a list of functions.
+```haskell
+ghci> map ($ 3) [(4+), (10*), (^2), sqrt]  
+[7.0,30.0,9.0,1.7320508075688772]  
+```
+### Function composition
+In mathematics, function composition is defined like this: $(f \circ g)(x) = f(g(x))$
+In Haskell, function composition is pretty much the same thing. We do function composition with the `.` function, which is defined like so:
+```haskell
+(.) :: (b -> c) -> (a -> b) -> a -> c  
+f . g = \x -> f (g x)  
+```
+
+You could write composed function applications in a much more readable way
+```haskell
+ghci> map (\x -> negate (abs x)) [5,-3,-6,7,-3,2,-19,24]  
+[-5,-3,-6,-7,-3,-2,-19,-24]  
+ghci> map (negate . abs) [5,-3,-6,7,-3,2,-19,24]  
+[-5,-3,-6,-7,-3,-2,-19,-24]  
+```
+
+If you are including functions that take in multiple parameters in the composition they need to be partially applied so that the composition can be structured. (Check the type declaration of `.` function)
+
+```haskell
+replicate 100 (product (map (*3) (zipWith max [1,2,3,4,5] [4,5,6,7,8])))
+replicate 100 . product . map (*3) . zipWith max [1,2,3,4,5] $ [4,5,6,7,8]
+```
+Function composition can be used to write elegant point free style function definitions
+```haskell
+fn x = ceiling (negate (tan (cos (max 50 x))))  
+fn = ceiling . negate . tan . cos . max 50  
 ```

@@ -1,4 +1,5 @@
-# MongoDB Notes [view course](https://www.linkedin.com/learning/learning-mongodb)
+# MongoDB Notes 
+[view course](https://www.linkedin.com/learning/learning-mongodb)
 ## Getting Started
 - You can find the installed MongoDB server at `C:\Program Files\MongoDB\Server`
 - To run MongoDB as a service (first check if it is already running or not) the command is `mongod.exe --config mongod.cfg`
