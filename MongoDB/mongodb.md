@@ -44,3 +44,5 @@
 - `db.recipes.updateOne({ title : "Pizza" }, { $push: { liked_by: "Paul"}})` would append names to an array
   > Note : Take a look at `$pop` and `$pull` as well
 - `db.recipes.deleteOne({ title : "Pizza" })` can be used to delete documents
+## Data schema and modelling
+- Use `db.collection.find().explain("executionStats")` for getting the query execution statistics

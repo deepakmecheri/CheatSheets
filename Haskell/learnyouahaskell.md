@@ -712,3 +712,7 @@ Function composition can be used to write elegant point free style function defi
 fn x = ceiling (negate (tan (cos (max 50 x))))  
 fn = ceiling . negate . tan . cos . max 50  
 ```
+
+## 7. Modules
+
+
