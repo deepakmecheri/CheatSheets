@@ -46,3 +46,5 @@
 - `db.recipes.deleteOne({ title : "Pizza" })` can be used to delete documents
 ## Data schema and modelling
 - Use `db.collection.find().explain("executionStats")` for getting the query execution statistics
+- Creating custom indexes can speed up you queries `db.createIndex({"cook_time": -1})`
+- Run `db.recipes.getIndexes()` to see the available indexes
